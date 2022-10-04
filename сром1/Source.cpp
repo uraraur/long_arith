@@ -41,15 +41,14 @@ private:
 		return hexNum;
 	}
 	static uint64_t from_hex(string a) {
-		int base = 1;
-		int i = 0;
+		uint64_t base = 1;
 		uint64_t decNum = 0;
 		for (int i = a.size() - 1; i >= 0; i--) {
 			if (a[i] >= '0' && a[i] <= '9') {
-				decNum += (int(a[i]) - 48) * base;
+				decNum += ((int(a[i]) - 48) * base);
 			}
 			else if (a[i] >= 'A' && a[i] <= 'F') {
-				decNum += (int(a[i]) - 55) * base;
+				decNum += ((int(a[i]) - 55) * base);
 			}
 			base = base * 16;
 		}
@@ -82,26 +81,32 @@ public:
 	~LongNum() {
 		delete[] number;
 	};
-	void print() {
+	void print() const{
 		for (int i = length - 1; i >= 0; i--) {
 			cout << number[i] << " ";
 		}
 	}
-	void printhex() {
+	void printhex() const {
+			cout << this->gethex();
+	}
+	string gethex() const {
+		string temp;
 		for (int i = length - 1; i >= 0; i--) {
-			string temp = to_hex(number[i]);
-			std::reverse(temp.begin(), temp.end());
-			cout << temp;
+			temp = temp + to_hex(number[i]);
+			std::reverse(temp.begin(), temp.end());   
 		}
+		while (temp[0] == '0')
+			temp.erase(temp.front());
+		return temp;
 	}
 	static LongNum readhex(string a) {
 		string temp(16, '0');
 		while (a.size() % 16 != 0) {
-			a.push_back('0');
+			a.insert(0, "0");
 		}
-		LongNum result((uint64_t) 0, a.size()/16);
+		LongNum result((uint64_t)0, a.size() / 16);
 		for (int i = a.size() - 1, j = 0; i >= 0; i = i - 16, j++) {
-			for(int c = 0; c < 16; c++){
+			for (int c = 0; c < 16; c++) {
 				temp[15 - c] = a[i - c];
 			}
 			result.number[j] = from_hex(temp);
@@ -177,7 +182,7 @@ public:
 	bool operator==(const LongNum& b) const{
 		if (this->length != b.length)
 			return false;
-		for (int i = 0; i > length; i++) {
+		for (int i = 0; i < length; i++) {
 			if (number[i] != b.number[i]) {
 				return false;
 			}
@@ -194,9 +199,11 @@ int main() {
 	LongNum BB = LongNum::readhex(B);
 	LongNum CC = LongNum::readhex(C);
 	LongNum CCC = AA + BB;
+	//AA.print()
 	CC.printhex();
 	cout << endl;
 	CCC.printhex();
+	cout << endl;
 	cout << (CCC == CC) << endl;
 }
 
