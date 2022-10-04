@@ -1,6 +1,5 @@
 #include <iostream>
 #include <limits>
-#include <algorithm>
 using namespace std;
 #define ARCHITECTURE_TYPE 64
 #define MAX_UINT 18446744073709551615
