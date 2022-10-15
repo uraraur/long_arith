@@ -1,6 +1,5 @@
 #include <iostream>
 #include <limits>
-#include <string> 
 using namespace std;
 #define ARCHITECTURE_TYPE 64
 #define MAX_UINT 18446744073709551615
@@ -174,79 +173,11 @@ public:
 			i++;
 		}
 		if (d != 0) {
-			throw exception("Negative number!2");
+			throw exception("Negarive number!2");
 		}
 		diff.Shrink_to_fit();
 		return diff;
 	};
-	LongNum operator*(const LongNum& b) const {
-		LongNum mult((uint64_t)0, length + b.length);
-		uint64_t temp = 0;
-		if (this->length < 512) {
-			
-		}
-
-	}
-	LongNum operator<<(uint64_t s) const {
-		if (s == 0) {
-			return *this;
-		}
-		uint64_t k, r;
-		k = s / ARCHITECTURE_TYPE;
-		r = s % ARCHITECTURE_TYPE;
-		uint64_t carry = 0;
-		uint64_t temp;
-		LongNum res((uint64_t)0, this->length);
-		if (k != 0) {
-			for (int i = length - 1; i >= k; i--) {
-				number[i] = number[i - k];
-			}
-			for (int i = 0; i < k; i++) {
-				number[i] = 0;
-			}
-		}
-		this->print();
-		cout << endl;
-		for (int i = 0; i < length; i++) {
-			temp = ((number[i] >> (ARCHITECTURE_TYPE - r - 1)) >> 1);
-			number[i] = ((number[i] << r) | carry);
-			carry = temp;
-		}
-		return *this;
-	}
-	LongNum operator>>(uint64_t s) const {
-		if (s == 0) {
-			return *this;
-		}
-		uint64_t k = s / ARCHITECTURE_TYPE;
-		uint64_t r = s % ARCHITECTURE_TYPE;
-		uint64_t carry = 0;
-		uint64_t temp;
-		LongNum res((uint64_t)0, this->length);
-		if (k != 0) {
-			for (int i = 0; i <= k; i++) {
-				number[i] = number[i+k];
-			}
-			for (int i = length - 1; i > k; i--) {
-				number[i] = 0;
-			}
-		}
-		for (int i = length - 1; i > 0; i--) {
-			temp = (number[i] << (ARCHITECTURE_TYPE - r));
-			number[i] = ((number[i] >> r) | carry);
-			carry = temp;
-		}
-		return *this;
-	}
-	static LongNum mult_for64(uint64_t a, uint64_t b) {
-		LongNum res((uint64_t)0, 2);
-		uint64_t a1, a2, b1, b2;
-		a1 = (a >> 32);
-		a2 = ((a << 32) >> 32);
-		b1 = (b >> 32);
-		b2 = ((b << 32) >> 32);
-	}
-
 	bool operator==(const LongNum& b) const{
 		if (this->length != b.length)
 			return false;
@@ -257,11 +188,9 @@ public:
 		}
 		return true;
 	}
-	
 };
 
 int main() {
-	/* 
 	string A = "D4D2110984907B5625309D956521BAB4157B8B1ECE04043249A3D379AC112E5B9AF44E721E148D88A942744CF56A06B92D28A0DB950FE4CED2B41A0BD38BCE7D0BE1055CF5DE38F2A588C2C9A79A75011058C320A7B661C6CE1C36C7D870758307E5D2CF07D9B6E8D529779B6B2910DD17B6766A7EFEE215A98CAC300F2827DB";
 	string B = "3A7EF2554E8940FA9B93B2A5E822CC7BB262F4A14159E4318CAE3ABF5AEB1022EC6D01DEFAB48B528868679D649B445A753684C13F6C3ADBAB059D635A2882090FC166EA9F0AAACD16A062149E4A0952F7FAAB14A0E9D3CB0BE9200DBD3B0342496421826919148E617AF1DB66978B1FCD28F8408506B79979CCBCC7F7E5FDE7";
 	string C = "10F51035ED319BC50C0C4503B4D44872FC7DE7FC00F5DE863D6520E3906FC3E7E8761505118C918DB31AADBEA5A054B13A25F259CD47C1FAA7DB9B76F2DB450861BA26C4794E8E3BFBC2924DE45E47E5408536E3548A03591DA0556D595AB78C55149F45170F2CB7736A46976D1C09BFCE4DF6EAB040599AF235968F8070E25C2";
@@ -275,19 +204,5 @@ int main() {
 	CCC.printhex();
 	cout << endl;
 	cout << (CCC == CC) << endl;
-	*/
-	int n = 3;
-	uint64_t* number = new uint64_t[n];
-	number[0] = MAX_UINT;
-	number[1] = 0;
-	number[2] = MAX_UINT;
-	LongNum a(number, n);
-	a.print();
-	cout << endl;
-	LongNum a1 = a >> 64;
-	a1.print();
-	string b = "11111111111111111111111111111111111111111111111111111111111111";
-	cout << endl << b.size() << endl;
-	cout << (MAX_UINT << 64);
 }
 
