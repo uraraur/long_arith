@@ -70,6 +70,11 @@ public:
             number[i] = num[i];
         }
     }
+    LongNum(LongNum&& b) {
+        this->number = b.number;
+        b.number = nullptr;
+        this->length = b.length;
+    }
     LongNum(const LongNum& b) {
         this->length = b.length;
         number = new uint64_t[length];
@@ -84,18 +89,22 @@ public:
         for (int i = length - 1; i >= 0; i--) {
             cout << number[i] << " ";
         }
+        cout << endl;
     }
     void printhex() const {
         cout << this->gethex();
+        cout << endl;
     }
     string gethex() const {
         string temp;
+        string tohex;
         for (int i = length - 1; i >= 0; i--) {
-            temp = temp + to_hex(number[i]);
-            std::reverse(temp.begin(), temp.end());
+            tohex = to_hex(number[i]);
+            std::reverse(tohex.begin(), tohex.end());
+            temp = temp + tohex;
         }
-        while (temp[0] == '0')
-            temp.erase(temp.front());
+       // while (temp[0] == '0')
+          //  temp.erase(0, 1);
         return temp;
     }
     static LongNum readhex(string a) {
@@ -179,12 +188,30 @@ public:
         return diff;
     };
     LongNum operator*(const LongNum& b) const {
-        LongNum mult((uint64_t)0, length + b.length);
-        uint64_t temp = 0;
-        if (this->length < 512) {
-
+        LongNum mult((uint64_t)0, this->length + b.length);
+        uint16_t max = b.length;
+        if (b.length < this->length) {
+            max = this->length;
         }
-
+        int k = 0;
+        if (this->length < 512) {
+            for (int i = 0; i < b.length; i++) {
+                int c = 0;
+                LongNum s((uint64_t)0, max + 1);
+                for (int j = 0; j < this->length; j++) {
+                    LongNum temp((uint64_t)0, max + 1);
+                    LongNum tilt = mult_for64(this->number[j], b.number[i]);
+                    temp.number[0] = tilt.number[0];
+                    temp.number[1] = tilt.number[1];
+                    s = s + (temp << c);
+                    c = c + 64;
+                }
+                mult = mult + (s << k);
+                mult.print();
+                k = k + 64;
+            }
+            return mult;
+        }
     }
     LongNum operator<<(uint64_t s) const {
         if (s == 0) {
@@ -198,20 +225,17 @@ public:
         LongNum res((uint64_t)0, this->length);
         if (k != 0) {
             for (int i = length - 1; i >= k; i--) {
-                number[i] = number[i - k];
-            }
-            for (int i = 0; i < k; i++) {
-                number[i] = 0;
+                res.number[i] = number[i - k];
             }
         }
-        this->print();
-        cout << endl;
-        for (int i = 0; i < length; i++) {
-            temp = ((number[i] >> (ARCHITECTURE_TYPE - r - 1)) >> 1);
-            number[i] = ((number[i] << r) | carry);
-            carry = temp;
+        if (r != 0) {
+            for (int i = 0; i < length; i++) {
+                temp = ((res.number[i] >> (ARCHITECTURE_TYPE - r - 1)) >> 1);
+                res.number[i] = ((res.number[i] << r) | carry);
+                carry = temp;
+            }
         }
-        return *this;
+        return res;
     }
     LongNum operator>>(uint64_t s) const {
         if (s == 0) {
@@ -224,26 +248,52 @@ public:
         LongNum res((uint64_t)0, this->length);
         if (k != 0) {
             for (int i = 0; i <= k; i++) {
-                number[i] = number[i + k];
-            }
-            for (int i = length - 1; i > k; i--) {
-                number[i] = 0;
+                res.number[i] = number[i + k];
             }
         }
-        for (int i = length - 1; i > 0; i--) {
-            temp = (number[i] << (ARCHITECTURE_TYPE - r));
-            number[i] = ((number[i] >> r) | carry);
-            carry = temp;
+        if (r != 0) {
+            for (int i = length - 1; i > 0; i--) {
+                temp = (res.number[i] << (ARCHITECTURE_TYPE - r));
+                res.number[i] = ((res.number[i] >> r) | carry);
+                carry = temp;
+            }
+        }
+        return res;
+    }
+    LongNum& operator=(const LongNum& b){
+        this->length = b.length;
+        number = new uint64_t[length];
+        for (uint16_t i = 0; i < length; i++) {
+            this->number[i] = b.number[i];
         }
         return *this;
     }
+    LongNum& operator=(LongNum&& b) {
+        if (this->number)
+            delete[] this->number;
+        this->number = b.number;
+        b.number = nullptr;
+        this->length = b.length;
+        return *this;
+    }
     static LongNum mult_for64(uint64_t a, uint64_t b) {
-        LongNum res((uint64_t)0, 2);
         uint64_t a1, a2, b1, b2;
+        LongNum res((uint64_t)0, 2);
+        LongNum c1((uint64_t)0, 1);
+        LongNum c2((uint64_t)0, 1);
         a1 = (a >> 32);
         a2 = ((a << 32) >> 32);
         b1 = (b >> 32);
         b2 = ((b << 32) >> 32);
+        c1.number[0] = a1 * b2;
+        c2.number[0] = a2 * b1;
+        LongNum s((uint64_t)0, 2);
+        s = c1 + c2;
+        s << 32;
+        res.number[1] = (a1 * b1);
+        res.number[0] = (a2 * b2);
+        LongNum res1 = res + s;
+        return res1;
     }
 
     bool operator==(const LongNum& b) const {
@@ -275,17 +325,24 @@ int main() {
     cout << endl;
     cout << (CCC == CC) << endl;
     */
-    int n = 3;
-    uint64_t* number = new uint64_t[n];
-    number[0] = MAX_UINT;
-    number[1] = 0;
-    number[2] = MAX_UINT;
-    LongNum a(number, n);
-    a.print();
+    uint64_t* number1 = new uint64_t[3];
+    uint64_t* number2 = new uint64_t[2];
+    for (int i = 0; i < 3; i++)
+    {
+        number1[i] = rand() % 100;
+    }
+    for (int i = 0; i < 2; i++)
+    {
+        number2[i] = rand() % 100;
+    }
+    LongNum a(number1, 3);
+    LongNum b(number1, 2);
+    a.printhex();
     cout << endl;
-    LongNum a1 = a >> 64;
-    a1.print();
-    string b = "11111111111111111111111111111111111111111111111111111111111111";
-    cout << endl << b.size() << endl;
-    cout << (MAX_UINT << 64);
+    b.printhex();
+    cout << endl;
+    LongNum c = a * b;
+    c.printhex();
+    cout << endl;
+  
 }
