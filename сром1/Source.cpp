@@ -8,7 +8,7 @@ class LongNum {
 private:
     uint16_t length;
     uint64_t* number = nullptr;
-    void Shrink_to_fit() {
+    void shrink_to_fit() {
         uint16_t counter = 0;
         for (int i = length - 1; i >= 0; i--) {
             if (number[i] != 0) break;
@@ -52,6 +52,35 @@ private:
             base = base * 16;
         }
         return decNum;
+    }
+    LongNum& addzero(int j) {
+        uint64_t* temp;
+        temp = new uint64_t[this->length + j];
+        for (int i = 0; i < this->length; i++) 
+        {
+            temp[i] = this->number[i];
+        }
+        for (int i = this->length; i < this->length + j; i++) 
+        {
+            temp[i] = 0;
+        }
+        delete[] this->number;
+        this->number = temp;
+        this->length = this->length + j;
+        return *this;
+    }
+    pair<LongNum, LongNum> kar_sep(uint64_t size) const {
+        pair<LongNum, LongNum> a;
+        LongNum temp = *this;
+        if (temp.length % 2 != 0) {
+            temp.addzero(size - temp.length);
+        }
+        uint64_t s = (temp.length / 2) * ARCHITECTURE_TYPE;
+        a.first = (temp >> s);
+        a.second = ((temp << s) >> s);
+        a.first.shrink_to_fit();
+        a.second.shrink_to_fit();
+        return a;
     }
 public:
     LongNum() : LongNum((uint64_t)0, 1) {};
@@ -184,32 +213,68 @@ public:
         if (d != 0) {
             throw exception("Negative number!2");
         }
-        diff.Shrink_to_fit();
+        diff.shrink_to_fit();
         return diff;
     };
     LongNum operator*(const LongNum& b) const {
         LongNum mult((uint64_t)0, this->length + b.length);
         uint16_t max = b.length;
+        uint16_t min = this->length;
         if (b.length < this->length) {
             max = this->length;
+            min = b.length;
         }
+        LongNum tilt;
         int k = 0;
-        if (this->length < 512) {
+        if (this->length < 8) {
             for (int i = 0; i < b.length; i++) {
                 int c = 0;
-                LongNum s((uint64_t)0, max + 1);
+                LongNum s((uint64_t)0, this->length + b.length);
                 for (int j = 0; j < this->length; j++) {
                     LongNum temp((uint64_t)0, max + 1);
-                    LongNum tilt = mult_for64(this->number[j], b.number[i]);
+                    tilt = mult_for64(this->number[j], b.number[i]);
                     temp.number[0] = tilt.number[0];
                     temp.number[1] = tilt.number[1];
                     s = s + (temp << c);
-                    c = c + 64;
+                    c = c + ARCHITECTURE_TYPE;
                 }
                 mult = mult + (s << k);
-                mult.print();
-                k = k + 64;
+                k = k + ARCHITECTURE_TYPE;
             }
+            mult.shrink_to_fit();
+            return mult;
+        }
+        else {
+            LongNum temp = *this;
+            LongNum a0, a1, b0, b1, c0, c1, c2;
+            if (max % 2 != 0) {
+                max = max + 1;
+            }
+            pair<LongNum, LongNum> a = temp.kar_sep(max);
+            a1 = a.first;
+            a1.print();
+            cout << endl;
+            a0 = a.second;
+            a0.print();
+            cout << endl;
+            a = b.kar_sep(max);
+            b1 = a.first;
+            b1.print();
+            cout << endl;
+            b0 = a.second;
+            b0.print();
+            cout << endl;
+            c0 = b0 * a0;
+            c0.print();
+            cout << endl;
+            c1 = a1 * b1;
+            c1.print();
+            cout << endl;
+            c2 = ((((a1 + a0) * (b1 + b0)) - c1) - c2);
+            c2.print();
+            cout << endl;
+            uint64_t s = (max / 2) * ARCHITECTURE_TYPE;
+            mult = (c1 >> (s*2)) + (c2 >> s) + c0;
             return mult;
         }
     }
@@ -247,7 +312,7 @@ public:
         uint64_t temp;
         LongNum res((uint64_t)0, this->length);
         if (k != 0) {
-            for (int i = 0; i <= k; i++) {
+            for (int i = 0; i < length - k ; i++) {
                 res.number[i] = number[i + k];
             }
         }
@@ -325,24 +390,30 @@ int main() {
     cout << endl;
     cout << (CCC == CC) << endl;
     */
-    uint64_t* number1 = new uint64_t[3];
-    uint64_t* number2 = new uint64_t[2];
-    for (int i = 0; i < 3; i++)
+    uint64_t* number1 = new uint64_t[10];
+    uint64_t* number2 = new uint64_t[10];
+    for (int i = 0; i < 10; i++)
     {
         number1[i] = rand() % 100;
     }
-    for (int i = 0; i < 2; i++)
+    for (int i = 0; i < 10; i++)
     {
         number2[i] = rand() % 100;
     }
-    LongNum a(number1, 3);
-    LongNum b(number1, 2);
+    LongNum a(number1, 10);
+    LongNum b(number2, 10);
+    a.print();
+    cout << endl;
     a.printhex();
+    cout << endl;
+    b.print();
     cout << endl;
     b.printhex();
     cout << endl;
     LongNum c = a * b;
-    c.printhex();
+    c.print();
     cout << endl;
+    c.printhex();
   
+
 }
