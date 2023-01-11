@@ -231,6 +231,8 @@ public:
         diff.shrink_to_fit();
         return diff;
     };
+
+
     LongNum operator*(const LongNum& b) const {
         LongNum mult((uint64_t)0, this->length + b.length);
         uint16_t max = b.length;
@@ -239,7 +241,7 @@ public:
             max = this->length;
             min = b.length;
         }
-        LongNum tilt;
+        LongNum t;
         int k = 0;
         if (max < 8) {
             for (int i = 0; i < b.length; i++) {
@@ -247,9 +249,9 @@ public:
                 LongNum s((uint64_t)0, this->length + b.length);
                 for (int j = 0; j < this->length; j++) {
                     LongNum temp((uint64_t)0, max + 1);
-                    tilt = mult_for64(this->number[j], b.number[i]);
-                    temp.number[0] = tilt.number[0];
-                    temp.number[1] = tilt.number[1];
+                    t = mult_for64(this->number[j], b.number[i]);
+                    temp.number[0] = t.number[0];
+                    temp.number[1] = t.number[1];
                     s = s + (temp << c);
                     c = c + ARCHITECTURE_TYPE;
                 }
@@ -276,14 +278,68 @@ public:
             b0 = a.second;
             c0 = b0 * a0;
             c1 = a1 * b1;
-            LongNum zxc = ((a1 + a0) * (b1 + b0));
-            c2 = ((zxc - c1) - c0);
+            LongNum x = ((a1 + a0) * (b1 + b0));
+            c2 = ((x - c1) - c0);
             c1.addzero(2*s / ARCHITECTURE_TYPE);
             c2.addzero(s / ARCHITECTURE_TYPE);
             mult = ((c1 << 2*s) + (c2<<s));
             return mult + c0;
         }
     }
+
+    pair<LongNum, LongNum> divide(const LongNum& div) const {
+        if (this->length < div.length) {
+            return {0, *this};
+        }
+        if (div == 1) {
+            return {*this, 0};
+        }
+        LongNum res = (0, 1);
+        LongNum q = *this;
+        LongNum temp;
+        uint64_t c;
+        while (q > div || q == div) {
+            temp = div;
+            c = q.msb() - div.msb();
+            temp = ((temp.addzero(c)) << c);
+            if (temp > q){
+                temp = (temp >> 1);
+            }
+            q = q - temp;
+            res = res + ((LongNum(1, 1).addzero(c)) << c);
+        }
+        return {res, q};
+    }
+
+    LongNum operator/(const LongNum& div) const {
+        return this->divide(div).first;
+    }
+
+    LongNum operator%(const LongNum& div) const {
+        return this->divide(div).second;
+    }
+
+    uint64_t msb() const {
+        uint64_t c = 0;
+        uint64_t m = 1;
+        m = (m << 63);
+        while (!(m & this->number[length-1])) {
+            c++;
+            m = (m >> 1);
+        }
+        return c;
+    }
+
+    LongNum operator^(const LongNum& pow) const {
+        LongNum res = (1, 1);
+        for (int i = pow.length - 1; i <= 0; i--) {
+            res = res * res;
+            if (pow.number[i] == 1) {
+
+            }
+        }
+    }
+
     LongNum operator<<(uint64_t s) const {
         if (s == 0) {
             return *this;
@@ -320,7 +376,7 @@ public:
         }
         if (r != 0) {
             for (int i = length - 1; i > 0; i--) {
-                temp = (res.number[i] << (ARCHITECTURE_TYPE - r));
+                temp = ((res.number[i] << (ARCHITECTURE_TYPE - r - 1)) << 1);
                 res.number[i] = ((res.number[i] >> r) | carry);
                 carry = temp;
             }
@@ -373,24 +429,36 @@ public:
         return true;
     }
 
+    bool operator>(const LongNum& b) const {
+        if (this->length > b.length) {
+            return true;
+        }
+        for (int i = length - 1; i > 0; i--) {
+            if (number[i] > b.number[i]) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 };
 
 int main() {
-    string A = "D4D2110984907B5625309D956521BAB4157B8B1ECE04043249A3D379AC112E5B9AF44E721E148D88A942744CF56A06B92D28A0DB950FE4CED2B41A0BD38BCE7D0BE1055CF5DE38F2A588C2C9A79A75011058C320A7B661C6CE1C36C7D870758307E5D2CF07D9B6E8D529779B6B2910DD17B6766A7EFEE215A98CAC300F2827DB";
-    string B = "3A7EF2554E8940FA9B93B2A5E822CC7BB262F4A14159E4318CAE3ABF5AEB1022EC6D01DEFAB48B528868679D649B445A753684C13F6C3ADBAB059D635A2882090FC166EA9F0AAACD16A062149E4A0952F7FAAB14A0E9D3CB0BE9200DBD3B0342496421826919148E617AF1DB66978B1FCD28F8408506B79979CCBCC7F7E5FDE7";
-    string C = "30A120B609DCBE28B09CA92E12DD29D77AE6400DC22B026AFB5FB945AAF62B57F4E48BD299261F02BBB35DD2495B5CD2713BF0E30192DAE1B334659160C8552423F0AD7FB82870920DF4E9B57980EAD2ADA9F3EF4B5D0718AB7F1053700395278998CB9AD48498D65150E3E837B0BB169D432B441424557061F838A17C65F90A31105F599BF69B87485BF9C70F51D37A417E476E372558C26782AC8C8F35C3D1227E851D8A72CD708700FD90C5E17F22C4EA15730345E56BD76F04B54580813CBE306B4404C6F34BCD9840D2911E6B3CF6DE3EE428C274EDF0A97335D8256DA26FCD67BA5450593A15F6B527ECE76FBBE20F7A882347614AF4B7FAF55086659D";
-    //std::transform(C.begin(), C.end(), C.begin(), [](char c) { return std::toupper(c); });
-    LongNum AA = LongNum::readhex(A);
-    AA.print();
-    LongNum BB = LongNum::readhex(B);
-    BB.print();
-    LongNum CC = LongNum::readhex(C);
-    LongNum CCC = AA * BB;
-    CCC.print();
-    //AA.print()
-    CC.printhex();
-    cout << endl;
-    CCC.printhex();
-    cout << endl;
-    cout << (CCC == CC) << endl;
+    //string A = "D4D2110984907B5625309D956521BAB4157B8B1ECE04043249A3D379AC112E5B9AF44E721E148D88A942744CF56A06B92D28A0DB950FE4CED2B41A0BD38BCE7D0BE1055CF5DE38F2A588C2C9A79A75011058C320A7B661C6CE1C36C7D870758307E5D2CF07D9B6E8D529779B6B2910DD17B6766A7EFEE215A98CAC300F2827DB";
+    //string B = "3A7EF2554E8940FA9B93B2A5E822CC7BB262F4A14159E4318CAE3ABF5AEB1022EC6D01DEFAB48B528868679D649B445A753684C13F6C3ADBAB059D635A2882090FC166EA9F0AAACD16A062149E4A0952F7FAAB14A0E9D3CB0BE9200DBD3B0342496421826919148E617AF1DB66978B1FCD28F8408506B79979CCBCC7F7E5FDE7";
+    //string C = "30A120B609DCBE28B09CA92E12DD29D77AE6400DC22B026AFB5FB945AAF62B57F4E48BD299261F02BBB35DD2495B5CD2713BF0E30192DAE1B334659160C8552423F0AD7FB82870920DF4E9B57980EAD2ADA9F3EF4B5D0718AB7F1053700395278998CB9AD48498D65150E3E837B0BB169D432B441424557061F838A17C65F90A31105F599BF69B87485BF9C70F51D37A417E476E372558C26782AC8C8F35C3D1227E851D8A72CD708700FD90C5E17F22C4EA15730345E56BD76F04B54580813CBE306B4404C6F34BCD9840D2911E6B3CF6DE3EE428C274EDF0A97335D8256DA26FCD67BA5450593A15F6B527ECE76FBBE20F7A882347614AF4B7FAF55086659D";
+    ////std::transform(C.begin(), C.end(), C.begin(), [](char c) { return std::toupper(c); });
+    //LongNum AA = LongNum::readhex(A);
+    //AA.print();
+    //LongNum BB = LongNum::readhex(B);
+    //BB.print();
+    //LongNum CC = LongNum::readhex(C);
+    //LongNum CCC = AA * BB;
+    //CCC.print();
+    ////AA.print()
+    //CC.printhex();
+    //cout << endl;
+    //CCC.printhex();
+    //cout << endl;
+    //cout << (CCC == CC) << endl;
 }
