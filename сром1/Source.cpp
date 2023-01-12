@@ -207,7 +207,7 @@ public:
         uint16_t max = this->length;
         uint16_t min = b.length;
         const LongNum* max_num = this;
-        if (this->length < b.length) {
+        if (b > *this) {
             throw exception("Negative number!1");
         }
         LongNum diff(*max_num);
@@ -301,14 +301,16 @@ public:
         while (q > div || q == div) {
             temp = div;
             c = q.msb() - div.msb();
-            temp = ((temp.addzero(c)) << c);
+            temp = ((temp.addzero(ceil((double)c/(double)ARCHITECTURE_TYPE))) << c);
+            temp.shrink_to_fit();
             if (temp > q){
                 c = c-1;
                 temp = (temp >> 1);
             }
             q = q - temp;
-            res = res + ((LongNum(1, 1).addzero(c)) << c);
+            res = res + ((LongNum(1, 1).addzero(ceil((double)c / (double)ARCHITECTURE_TYPE))) << c);
         }
+        res.shrink_to_fit();
         return {res, q};
     }
 
@@ -445,13 +447,15 @@ LongNum pow64(uint64_t pow) const{
     }
 
     bool operator>(const LongNum& b) const {
-        if (this->length > b.length) {
+        if (this->length > b.length)
             return true;
-        }
-        for (int i = length - 1; i > 0; i--) {
-            if (number[i] > b.number[i]) {
+        else if (b.length > this->length)
+            return false;
+        for (int i = length - 1; i >= 0; i--) {
+            if (number[i] > b.number[i])
                 return true;
-            }
+            else if(b.number[i] > number[i])
+                return false;
         }
         return false;
     }
@@ -464,12 +468,11 @@ int main() {
     string C = "D4D2110984907B5625309D956521BAB4157B8B1ECE04043249A3D379AC112E5B9AF44E721E148D88A942744CF56A06B92D28A0DB950FE4CED2B41A0BD38BCE7D0BE1055CF5DE38F2A588C2C9A79A75011058C320A7B661C6CE1C36C7D870758307E5D2CF07D9B6E8D529779B6B2910DD17B6766A7EFEE215A98CAC300F2827DB";
     ////std::transform(C.begin(), C.end(), C.begin(), [](char c) { return std::toupper(c); });
     LongNum AA = LongNum::readhex(AB);
-    AA.print();
+    //AA.print();
     LongNum BB = LongNum::readhex(B);
-    BB.print();
+    //BB.print();
     LongNum CC = LongNum::readhex(C);
     LongNum CCC = AA / BB;
-    CCC.print();
     CC.printhex();
     cout << endl;
     CCC.printhex();
