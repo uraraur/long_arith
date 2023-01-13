@@ -268,7 +268,6 @@ public:
             if (max % 2 != 0) {
                 max = max + 1;
             }
-     
             pair<LongNum, LongNum> a = temp.kar_sep(max);
             uint64_t s = (max / 2) * ARCHITECTURE_TYPE;
             a1 = a.first;
@@ -283,7 +282,9 @@ public:
             c1.addzero(2*s / ARCHITECTURE_TYPE);
             c2.addzero(s / ARCHITECTURE_TYPE);
             mult = ((c1 << 2*s) + (c2<<s));
-            return mult + c0;
+            mult = mult + c0;
+            mult.shrink_to_fit();
+            return mult;
         }
     }
 
@@ -301,14 +302,14 @@ public:
         while (q > div || q == div) {
             temp = div;
             c = q.msb() - div.msb();
-            temp = ((temp.addzero(ceil((double)c/(double)ARCHITECTURE_TYPE))) << c);
+            temp.shift_l(c);
             temp.shrink_to_fit();
             if (temp > q){
                 c = c-1;
                 temp = (temp >> 1);
             }
             q = q - temp;
-            res = res + ((LongNum(1, 1).addzero(ceil((double)c / (double)ARCHITECTURE_TYPE))) << c);
+            res = res + LongNum(1, 1).shift_l(c);
         }
         res.shrink_to_fit();
         return {res, q};
@@ -333,30 +334,6 @@ public:
         return ((this->length*ARCHITECTURE_TYPE) - c);
     }
 
-LongNum pow64(uint64_t pow) const{
-    uint64_t m = 1;
-    bool t;
-    LongNum res(1,1);
-    for (int i = 63; i >= 0; i--){
-        m = (m << i);
-        t = (pow & m);
-        if(t == 1){
-            res = res * (*this);
-        }
-        if(i != 0)
-            res = res * res;
-    }
-    return res;
-}
-
-    LongNum operator^(LongNum& pow) const {
-        LongNum res(1, 1);
-        for (int i = pow.length - 1; i >= 0; i--) {
-            res = res.pow64(pow.number[i]);
-        }
-        return res;
-    }
-
     LongNum operator<<(uint64_t s) const {
         if (s == 0) {
             return *this;
@@ -370,6 +347,7 @@ LongNum pow64(uint64_t pow) const{
         for (int i = length - 1; i >= k; i--) {
             res.number[i] = number[i - k];
         }
+
         if (r != 0) {
             for (int i = 0; i < length; i++) {
                 temp = ((res.number[i] >> (ARCHITECTURE_TYPE - r - 1)) >> 1);
@@ -379,6 +357,7 @@ LongNum pow64(uint64_t pow) const{
         }
         return res;
     }
+
     LongNum operator>>(uint64_t s) const {
         if (s == 0) {
             return *this;
@@ -388,11 +367,11 @@ LongNum pow64(uint64_t pow) const{
         uint64_t carry = 0;
         uint64_t temp;
         LongNum res((uint64_t)0, this->length);
-        for (int i = 0; i < length - k ; i++) {
+        for (int i = 0; i < length - k; i++) {
             res.number[i] = number[i + k];
         }
         if (r != 0) {
-            for (int i = length - 1; i > 0; i--) {
+            for (int i = length - 1; i >= 0; i--) {
                 temp = ((res.number[i] << (ARCHITECTURE_TYPE - r - 1)) << 1);
                 res.number[i] = ((res.number[i] >> r) | carry);
                 carry = temp;
@@ -460,22 +439,124 @@ LongNum pow64(uint64_t pow) const{
         return false;
     }
 
+    LongNum& shift_r(uint64_t j) {
+        this->addzero(ceil((double)j / (double)ARCHITECTURE_TYPE));
+        *this = (*this >> j);
+        this->shrink_to_fit();
+        return *this;
+    }
+
+    LongNum& shift_l(uint64_t j) {
+        this->addzero(ceil((double)j / (double)ARCHITECTURE_TYPE));
+        *this = (*this << j);
+        this->shrink_to_fit();
+        return *this;
+    }
+
+
+//--------------------------------------------------------------------------------------------
+
+    static LongNum gcd(const LongNum& a, const LongNum& b){
+    LongNum r1 = a;
+    LongNum r2 = b;
+    LongNum temp;
+    while(!(r2 == 0)){
+        temp = r2;
+        r2 = r1 % r2;
+        r1 = temp;
+    }
+    return r1;
+    };
+
+    static LongNum lcm(const LongNum& a, const LongNum& b){
+        return ((a * b) / gcd(a,b));
+    }
+
+    static LongNum reduc_barret(const LongNum& a, const LongNum& n) {
+        LongNum mu(1, 1);
+        mu.shift_l(2 * n.msb());
+        mu = mu / n;
+        LongNum q1 = a;
+        q1.shift_r(n.msb() - 1);
+        q1 = q1 * mu;
+        q1.shift_r(n.msb() + 1);
+        LongNum r = (a - (q1 * n));
+        while (r > n || r == n)
+            r = r - n;
+        return r;
+    }
+
+    static LongNum barret(const LongNum& a, const LongNum& n, const LongNum& mu){
+        LongNum q1 = a;
+        q1.shift_r(n.msb() - 1);
+        q1 = q1 * mu;
+        q1.shift_r(n.msb() + 1);
+        LongNum r = (a - (q1 * n));
+        while (r > n || r == n)
+            r = r - n;
+        return r;
+    }
+
+
+    static LongNum pow64mod(LongNum& a, uint64_t pow, const LongNum& n, const LongNum& mu){
+        uint64_t m = 1;
+        m = ((m << 62) << 1);
+        bool t;
+        LongNum res(1,1);
+        for (int i = 63; i >= 0; i--){
+            t = (pow & m);
+            if(t != 0){
+                res = barret(res * a, n, mu);
+            }
+            if(i != 0)
+                res = barret(res * res, n, mu);
+            m = (m << 1);
+        }
+        return res;
+    }
+
+    static LongNum powmod(const LongNum& a, const LongNum& b, const LongNum& n) {
+        LongNum mu(1, 1);
+        mu.shift_l(2 * n.msb());
+        mu = mu / n;
+        /*uint64_t m = 1;
+        bool t;*/
+        LongNum temp = a % n;
+        LongNum res(1, 1);
+        //for (int j = b.length - 1; j >= 0; j--) {
+          /*  for (int i = 63; i >= 0; i--) {
+                m = (m << 1);
+                t = (b.number[j] & m);
+                if (t == 1) {
+                    res = barret(res * temp, n, mu);
+                }
+                if (i != 0)
+                    res = barret(res * res, n, mu);
+            }*/
+        //}
+        for (int i = b.length - 1; i >= 0; i--) {
+            res = res + pow64mod(temp, b.number[i], n, mu);
+        }
+        return res;
+    }
 };
 
+
 int main() {
-    string AB = "30A120B609DCBE28B09CA92E12DD29D77AE6400DC22B026AFB5FB945AAF62B57F4E48BD299261F02BBB35DD2495B5CD2713BF0E30192DAE1B334659160C8552423F0AD7FB82870920DF4E9B57980EAD2ADA9F3EF4B5D0718AB7F1053700395278998CB9AD48498D65150E3E837B0BB169D432B441424557061F838A17C65F90A31105F599BF69B87485BF9C70F51D37A417E476E372558C26782AC8C8F35C3D1227E851D8A72CD708700FD90C5E17F22C4EA15730345E56BD76F04B54580813CBE306B4404C6F34BCD9840D2911E6B3CF6DE3EE428C274EDF0A97335D8256DA26FCD67BA5450593A15F6B527ECE76FBBE20F7A882347614AF4B7FAF55086659D";
-    string B = "3A7EF2554E8940FA9B93B2A5E822CC7BB262F4A14159E4318CAE3ABF5AEB1022EC6D01DEFAB48B528868679D649B445A753684C13F6C3ADBAB059D635A2882090FC166EA9F0AAACD16A062149E4A0952F7FAAB14A0E9D3CB0BE9200DBD3B0342496421826919148E617AF1DB66978B1FCD28F8408506B79979CCBCC7F7E5FDE7";
-    string C = "D4D2110984907B5625309D956521BAB4157B8B1ECE04043249A3D379AC112E5B9AF44E721E148D88A942744CF56A06B92D28A0DB950FE4CED2B41A0BD38BCE7D0BE1055CF5DE38F2A588C2C9A79A75011058C320A7B661C6CE1C36C7D870758307E5D2CF07D9B6E8D529779B6B2910DD17B6766A7EFEE215A98CAC300F2827DB";
+    string A = "4D3C9";
+    string B = "DAF1ABDA4AD4D9FE3E36A529210C2AE99B905922FC0519798A26E351FE23AF375AD6BA288EE030B70DF0CE1CDF1E8B75BA56494DC6ED36B181814CD5783E6C81";
+    string N = "2AB3";
     ////std::transform(C.begin(), C.end(), C.begin(), [](char c) { return std::toupper(c); });
-    LongNum AA = LongNum::readhex(AB);
+    LongNum AA = LongNum::readhex(A);
     //AA.print();
     LongNum BB = LongNum::readhex(B);
     //BB.print();
-    LongNum CC = LongNum::readhex(C);
-    LongNum CCC = AA / BB;
+    LongNum NN = LongNum::readhex(N);
+    LongNum C = LongNum::powmod(AA, LongNum(1,1), NN);
+    C.printhex();
+    cout << endl;
+    LongNum CC = AA % NN;
     CC.printhex();
     cout << endl;
-    CCC.printhex();
-    cout << endl;
-    cout << (CCC == CC) << endl;
+    cout << (CC == C) << endl;
 }
