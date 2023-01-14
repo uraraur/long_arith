@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <string> 
  
 #define DIM 251
 
@@ -51,23 +52,52 @@ public:
 
     VPB pow(const VPB& a) const
     {
-           
+
     }
 
     VPB inv() const
     {
-        VPB res = this->pow2();
+        VPB a = this->pow2();
+        VPB res = a;
 
         for (int i = 0; i < DIM; i++)
-            res = res.pow2() * res;
+        {
+            a = a.pow2();
+            res = a * res;
+        }
+
+        return res;
     }
 
     VPB trace() const
     {
-        VPB res;
-        res.v = polymod();
+        VPB a = *this;
+        VPB res = a;
 
+        for (int i = 0; i < DIM; i++)
+        {
+            a = a.pow2();
+            res = a.add(res);
+        }
+
+        return res;
     }
+
+    string to_string() const
+    {
+        string result;
+
+        for (auto i = this->v.end(); i >= this->v.begin(); i--) 
+        {
+            if (*i)
+                result.append("1");
+            else
+                result.append("0");
+        }
+
+        return result;
+    }
+
 private:
 
     size_t size() const { return this->v.size(); }
