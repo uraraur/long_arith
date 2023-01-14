@@ -17,7 +17,7 @@ vector<bool> polymod()
     return poly;
 }
 
-class VPB
+class ONB
 {
 private:
 
@@ -25,16 +25,16 @@ private:
 
 public:
 
-    VPB(){ this->v = vector<bool>(252, false); }
+    ONB(){ this->v = vector<bool>(252, false); }
 
-    static VPB one() {
+    static ONB one() {
 
-        VPB one;
+        ONB one;
         one.v.at(0) = 1;
         return one;
     }
 
-    VPB operator+(const VPB& a) const
+    ONB operator+(const ONB& a) const
     {
         if(a.size() == DIM)
             return this->add(a);
@@ -42,7 +42,7 @@ public:
             throw "Invalid size";
     }
 
-    VPB operator*(const VPB& a) const
+    ONB operator*(const ONB& a) const
     {
         if (a.size() == DIM)
             return this->mult(a);
@@ -50,15 +50,15 @@ public:
             throw "Invalid size";
     }
 
-    VPB pow(const VPB& a) const
+    ONB pow(const ONB& a) const
     {
 
     }
 
-    VPB inv() const
+    ONB inv() const
     {
-        VPB a = this->pow2();
-        VPB res = a;
+        ONB a = this->pow2();
+        ONB res = a;
 
         for (int i = 0; i < DIM; i++)
         {
@@ -69,10 +69,10 @@ public:
         return res;
     }
 
-    VPB trace() const
+    ONB trace() const
     {
-        VPB a = *this;
-        VPB res = a;
+        ONB a = *this;
+        ONB res = a;
 
         for (int i = 0; i < DIM; i++)
         {
@@ -112,9 +112,9 @@ private:
         return t - this->v.begin();
     }
 
-    VPB shrink_to_fit() const
+    ONB shrink_to_fit() const
     {
-        VPB result;
+        ONB result;
 
         for (int i = 0; i < min(this->size(), result.size()); i++)
             result.v[i] = this->v[i];
@@ -123,9 +123,9 @@ private:
     }
 
 
-    VPB add(const VPB& a) const
+    ONB add(const ONB& a) const
     {
-        VPB result;
+        ONB result;
 
         if(a.size() > this->size())
         {
@@ -143,11 +143,11 @@ private:
         return result;
     }
 
-    VPB modp() const
+    ONB modp() const
     {
-        VPB m;
+        ONB m;
         m.v = polymod();
-        VPB res = *this;
+        ONB res = *this;
 
         while (res.msb() >= m.msb())
         {
@@ -157,15 +157,15 @@ private:
         return res.shrink_to_fit();
     }
 
-    VPB shift(int n) const
+    ONB shift(int n) const
     {
-        VPB result = *this;
+        ONB result = *this;
         result.v.insert(result.v.begin(), n, false);
     }
 
-    VPB mult(const VPB& a) const
+    ONB mult(const ONB& a) const
     {
-        VPB res;
+        ONB res;
 
         for (int i = 0; i < this->size(); i++) 
         {
@@ -176,9 +176,9 @@ private:
         return res.modp();
     }
 
-    VPB pow2() const
+    ONB pow2() const
     {
-        VPB res;
+        ONB res;
         res.v = vector<bool>(this->size() * 2, false);
         
         for (int i = 0; i < this->size(); i++) 
