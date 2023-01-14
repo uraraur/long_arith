@@ -64,16 +64,18 @@ public:
 
     ONB trace() const
     {
-        ONB a = *this;
-        ONB res = a;
-
+        int c = 0;
         for (int i = 0; i < DIM; i++)
         {
-            a = a.pow2();
-            res = a.add(res);
+            if (this->v[i])
+                c++;
         }
+        c = c % 2;
 
-        return res;
+        if (c)
+            return one();
+        else
+            return ONB();
     }
 
     string to_string() const
@@ -101,16 +103,6 @@ private:
             --t;
 
         return t - this->v.begin();
-    }
-
-    ONB shrink_to_fit() const
-    {
-        ONB result;
-
-        for (int i = 0; i < min(this->size(), result.size()); i++)
-            result.v[i] = this->v[i];
-
-        return result;
     }
 
     ONB shift(int n) const
