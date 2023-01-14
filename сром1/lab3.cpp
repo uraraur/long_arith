@@ -1,3 +1,4 @@
+#pragma once
 #include <iostream>
 #include <vector>
 #include <string> 
@@ -6,26 +7,33 @@
 
 using namespace std;
 
-vector<bool> polymod()
-{
-    vector<bool> poly(252, false);
-    poly.at(251) = 1;
-    poly.at(14) = 1;
-    poly.at(4) = 1;
-    poly.at(1) = 1;
-    poly.at(0) = 1;
-    return poly;
-}
-
 class PBV
 {
 private:
 
     vector<bool> v;
 
+    static vector<bool> polymod()
+    {
+        vector<bool> poly(252, false);
+        poly.at(251) = 1;
+        poly.at(14) = 1;
+        poly.at(4) = 1;
+        poly.at(1) = 1;
+        poly.at(0) = 1;
+        return poly;
+    }
+
 public:
 
-    PBV(){ this->v = vector<bool>(252, false); }
+    PBV(){ this->v = vector<bool>(DIM, false); }
+
+    PBV(vector<bool> a) : PBV()
+    {
+        PBV p;
+        p.v = a;
+        *this = this->add(p);
+    }
 
     static PBV one() {
 
@@ -50,9 +58,9 @@ public:
             throw "Invalid size";
     }
 
-    PBV pow(const PBV& a) const
+    bool operator==(const PBV& a) const
     {
-
+        return (this->v == a.v);
     }
 
     PBV inv() const
@@ -87,9 +95,9 @@ public:
     {
         string result;
 
-        for (auto i = this->v.end(); i >= this->v.begin(); i--) 
+        for (int i = this->size() - 1; i >= 0; i--)
         {
-            if (*i)
+            if (this->v[i])
                 result.append("1");
             else
                 result.append("0");
@@ -98,18 +106,29 @@ public:
         return result;
     }
 
+    PBV pow2() const
+    {
+        PBV res;
+        res.v = vector<bool>(this->size() * 2, false);
+
+        for (int i = 0; i < this->size(); i++)
+            res.v[2 * i] = this->v[i];
+
+        return res.modp();
+    }
+
 private:
 
     size_t size() const { return this->v.size(); }
 
     size_t msb() const
     {
-        auto t = this->v.end();
+        int t = this->size() - 1;
 
-        while (*t != 1)
+        while (this->v[t] != 1)
             --t;
 
-        return t - this->v.begin();
+        return t;
     }
 
     PBV shrink_to_fit() const
@@ -151,7 +170,7 @@ private:
 
         while (res.msb() >= m.msb())
         {
-            int c = res.size() - m.size();
+            int c = res.msb() - m.msb();
             res = res.add(m.shift(c));
         }
         return res.shrink_to_fit();
@@ -161,6 +180,7 @@ private:
     {
         PBV result = *this;
         result.v.insert(result.v.begin(), n, false);
+        return result;
     }
 
     PBV mult(const PBV& a) const
@@ -170,20 +190,9 @@ private:
         for (int i = 0; i < this->size(); i++) 
         {
             if(this->v[i] == 1)
-                res = res.add(a.shift(i));
+                res = res.add(a.shift(i)).modp();
         }
 
-        return res.modp();
-    }
-
-    PBV pow2() const
-    {
-        PBV res;
-        res.v = vector<bool>(this->size() * 2, false);
-        
-        for (int i = 0; i < this->size(); i++) 
-            res.v[2 * i] = this->v[i];
-        
         return res.modp();
     }
 };

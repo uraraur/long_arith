@@ -1,6 +1,8 @@
+#pragma once
 #include <iostream>
 #include <limits>
 #include <algorithm>
+
 
 using namespace std;
 #define ARCHITECTURE_TYPE 64
