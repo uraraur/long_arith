@@ -3,9 +3,38 @@
 #include <string> 
 #include <array>
 
+#define p 503
 #define DIM 251
 
 using namespace std;
+
+array<array<bool, DIM>, DIM> mult_matrix = { {0} };
+
+array<bool, DIM> pow2modp = { 0 };
+
+constexpr void precalc_matrix()
+{
+    size_t a = 1;
+    for (size_t i = 0; i < DIM; ++i)
+    {
+        pow2modp[i] = a;
+        a = (a * 2) % p;
+    }
+
+    for (size_t i = 0; i < DIM; ++i)
+    {
+        for (size_t j = 0; j < DIM; ++j)
+        {
+            size_t a1 = (pow2modp[i] + pow2modp[j]) % p;
+            size_t a2 = (pow2modp[i] - pow2modp[j]) % p;
+            size_t a3 = ((-1 * pow2modp[i]) + pow2modp[j]) % p;
+            size_t a4 = ((-1 * pow2modp[i]) - pow2modp[j]) % p;
+
+            mult_matrix[i][j] = (a1 || a2 || a3 || a4);
+        }
+    }
+}
+
 
 class ONB
 {
