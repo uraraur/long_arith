@@ -30,7 +30,7 @@ constexpr void precalc_matrix()
             size_t a3 = ((-1 * pow2modp[i]) + pow2modp[j]) % p;
             size_t a4 = ((-1 * pow2modp[i]) - pow2modp[j]) % p;
 
-            mult_matrix[i][j] = (a1 || a2 || a3 || a4);
+            mult_matrix[i][j] = ((a1 == 1) || (a2 == 1) || (a3 == 1) || (a4 == 1));
         }
     }
 }
@@ -66,10 +66,17 @@ public:
 
     ONB operator*(const ONB& a) const
     {
-        if (a.size() == DIM)
-            return this->mult(a);
-        else
-            throw "Invalid size";
+        ONB res;
+        ONB m1;
+
+        for (int i = 0; i < DIM; i++) 
+        {
+
+
+        }
+        m1.v = mult_mat(a.v);
+        mult_vec(this->v, m1.v);
+
     }
 
     ONB pow(const ONB& a) const
@@ -79,16 +86,7 @@ public:
 
     ONB inv() const
     {
-        ONB a = this->pow2();
-        ONB res = a;
-
-        for (int i = 0; i < DIM; i++)
-        {
-            a = a.pow2();
-            res = a * res;
-        }
-
-        return res;
+    
     }
 
     ONB trace() const
@@ -139,17 +137,33 @@ private:
         rotate(this->v.begin(), this->v.end() - n, this->v.end());
     }
 
-    ONB mult(const ONB& a) const
+    static array<bool, DIM> mult_mat(array<bool, DIM> a) 
     {
-        ONB res;
+        array<bool, DIM> res;
 
-        for (int i = 0; i < this->size(); i++)
+        for (int i = 0; i < DIM; i++) 
         {
-            if (this->v[i] == 1)
-                res = res.add(a.shift(i));
+            int c = 0;
+            for (int j = 0; j < DIM; j++)
+            {
+                if (mult_matrix[i][j] && a[j])
+                    c++;
+            }
+            c = c % 2;
+            res[i] = c;
         }
 
-        return res.modp();
+        return res;
+    }
+
+    static bool mult_vec(array<bool, DIM> a, array<bool, DIM> b)
+    {
+        bool res = false;
+
+        for(size_t i = 0; i< DIM; i++)
+            res = (res != (a[i] && b[i]));
+
+        return res;
     }
 
     ONB pow2() const
